@@ -1,10 +1,11 @@
-import { configs } from '@eslint/js';
-import typescriptPlugin, { configs as _configs } from '@typescript-eslint/eslint-plugin';
-import typescriptParser from '@typescript-eslint/parser';
-import { node } from 'globals';
+/* eslint-disable */
+const js = require('@eslint/js');
+const typescriptPlugin = require('@typescript-eslint/eslint-plugin');
+const typescriptParser = require('@typescript-eslint/parser');
+const globals = require('globals');
 
-export default [
-  configs.recommended,
+module.exports = [
+  js.configs.recommended,
   {
     files: ['src/**/*.ts'],
     languageOptions: {
@@ -14,14 +15,14 @@ export default [
         sourceType: 'module',
       },
       globals: {
-        ...node,
+        ...globals.node,
       },
     },
     plugins: {
       '@typescript-eslint': typescriptPlugin,
     },
     rules: {
-      ..._configs.recommended.rules,
+      ...typescriptPlugin.configs.recommended.rules,
       '@typescript-eslint/no-unused-vars': 'error',
       '@typescript-eslint/explicit-function-return-type': 'warn',
       '@typescript-eslint/no-explicit-any': 'warn',
