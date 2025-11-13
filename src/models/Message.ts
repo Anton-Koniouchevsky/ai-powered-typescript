@@ -1,8 +1,26 @@
-import Role from "./Role";
+import Role from './Role';
+
+type TextContent = {
+  type: 'text';
+  text: string;
+}
+
+type ImageUrlContent = {
+  type: 'image_url';
+  image_url: {
+    url: string;
+  };
+}
 
 interface Message {
-    role: Role;
-    content: string;
+  role: Role;
+  content: string | Array<TextContent | ImageUrlContent>;
+  custom_content?: {
+    attachments: Array<{
+      type: string;
+      url: string;
+    }>;
+  };
 }
 
 export default Message;

@@ -4,6 +4,12 @@ import Role from "../models/Role";
 interface Choice {
   message: {
     content: string;
+    custom_content?: {
+      attachments: Array<{
+        type: string;
+        url: string;
+      }>;
+    };
   };
   delta: {
     content: string;
@@ -23,6 +29,13 @@ export interface ClientOptions {
   presence_penalty?: number;
   stop?: string | string[];
   stream?: boolean;
+  custom_fields?: {
+    configuration?: {
+      size?: '1024x1024' | '1024x1792' | '792x1024',
+      style?: 'vivid' | 'natural',
+      quality?: 'standard' | 'hd'
+    }
+  }
 }
 
 class CustomClient {
@@ -65,8 +78,10 @@ class CustomClient {
         const combinedContent = choices.map(choice => choice.message.content).join('\n---\n');
         return { role: Role.Assistant, content: combinedContent };
       }
+
       const content = choices[0]!.message.content;
-      return { role: Role.Assistant, content };
+      const custom_content = choices[0]!.message.custom_content;
+      return { role: Role.Assistant, content, custom_content };
     }
     
     throw new Error("No choices returned from API");
