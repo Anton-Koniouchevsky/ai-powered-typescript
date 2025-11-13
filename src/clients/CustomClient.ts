@@ -14,13 +14,26 @@ interface ClientData {
   choices: Choice[];
 }
 
+export interface ClientOptions {
+  temperature?: number;
+  n?: number;
+  seed?: number;
+  max_tokens?: number;
+  frequency_penalty?: number;
+  presence_penalty?: number;
+  stop?: string | string[];
+  stream?: boolean;
+}
+
 class CustomClient {
   private endpoint: string;
   private apiKey: string;
+  private options: ClientOptions;
 
-  constructor(modelName: string) {
+  constructor(modelName: string, options: ClientOptions = {}) {
     this.endpoint = `${process.env.DIAL_ENDPOINT}/openai/deployments/${modelName}/chat/completions`;
     this.apiKey = process.env.DIAL_API_KEY ?? "";
+    this.options = options;
   }
 
   async getCompletion(messages: Message[]): Promise<Message> {
@@ -30,7 +43,8 @@ class CustomClient {
     };
 
     const requestData = {
-      messages
+      messages,
+      ...this.options,
     };
 
     
@@ -47,6 +61,10 @@ class CustomClient {
     const { choices } = await response.json() as ClientData;
 
     if (choices && choices.length > 0) {
+      if (choices.length > 1) {
+        const combinedContent = choices.map(choice => choice.message.content).join('\n---\n');
+        return { role: Role.Assistant, content: combinedContent };
+      }
       const content = choices[0]!.message.content;
       return { role: Role.Assistant, content };
     }
