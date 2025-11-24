@@ -8,6 +8,10 @@ interface EmbeddingsClientData {
   data: Array<Embedding>
 }
 
+interface EmbeddingOptions {
+  dimensions?: number;
+}
+
 class EmbeddingsClient {
   private endpoint: string;
   private apiKey: string;
@@ -17,7 +21,7 @@ class EmbeddingsClient {
     this.apiKey = process.env.DIAL_API_KEY ?? "";
   }
 
-  async embedDocuments(documents: string[]): Promise<number[][]> {
+  async embedDocuments(documents: string[], options: EmbeddingOptions = {}): Promise<number[][]> {
     const headers = {
       "Content-Type": "application/json",
       "Api-Key": this.apiKey,
@@ -26,7 +30,7 @@ class EmbeddingsClient {
     const requestData = {
       input: documents,
       // encoding_format: "float",
-      // dimensions: 1536
+      ...options
     };
 
     
@@ -45,8 +49,8 @@ class EmbeddingsClient {
     return data.map(item => item.embedding);
   }
 
-  async embedQuery(document: string): Promise<number[]> {
-    return (await this.embedDocuments([document]))[0]!;
+  async embedQuery(document: string, options: EmbeddingOptions = {}): Promise<number[]> {
+    return (await this.embedDocuments([document], options))[0]!;
   }
 }
 
