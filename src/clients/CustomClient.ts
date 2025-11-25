@@ -18,6 +18,11 @@ interface Choice {
 
 interface ClientData {
   choices: Choice[];
+  usage: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
 }
 
 export interface ClientOptions {
@@ -60,7 +65,6 @@ class CustomClient {
       ...this.options,
     };
 
-    
     const response = await fetch(this.endpoint, {
       method: "POST",
       headers,
@@ -71,7 +75,7 @@ class CustomClient {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const { choices } = await response.json() as ClientData;
+    const { choices, usage } = await response.json() as ClientData;
 
     if (choices && choices.length > 0) {
       if (choices.length > 1) {
@@ -81,7 +85,8 @@ class CustomClient {
 
       const content = choices[0]!.message.content;
       const custom_content = choices[0]!.message.custom_content;
-      return { role: Role.Assistant, content, custom_content };
+
+      return { role: Role.Assistant, content, custom_content, metadata: { ...usage } };
     }
     
     throw new Error("No choices returned from API");

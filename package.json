@@ -41,11 +41,13 @@
   "dependencies": {
     "@langchain/community": "^1.0.4",
     "@langchain/core": "^1.0.6",
+    "chromadb": "^3.1.6",
     "commander": "^14.0.2",
     "dotenv": "^16.4.5",
     "faiss-node": "^0.5.1",
     "inquirer": "^12.11.0",
     "langchain": "^1.0.6",
-    "pg": "^8.16.3"
+    "pg": "^8.16.3",
+    "zod": "^3.25.76"
   }
 }
