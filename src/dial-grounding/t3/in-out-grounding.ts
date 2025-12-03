@@ -122,7 +122,7 @@ class InputGrounder {
     console.log(`✅ Vector store updated with ${newUsers.length} new users.`);
   }
 
-  async retrieveContext(query: string, k = 10, score = 0.3): Promise<string> {
+  async retrieveContext(query: string, k = 10): Promise<string> {
     // Retrieve context, with optional automatic vectorstore update.
     if (!this.vectorStore) {
       await this.initializeVectorStore();

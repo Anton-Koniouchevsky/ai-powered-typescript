@@ -93,6 +93,12 @@ class CustomClient {
   }
 
   async streamCompletion(messages: Message[]): Promise<Message> {
+    const contentChunks = await this.stream(messages);
+
+    return { role: Role.Assistant, content: contentChunks.join('') };
+  }
+
+  async stream(messages: Message[]): Promise<string[]> {
     const headers = {
       "Content-Type": "application/json",
       "api-key": this.apiKey,
@@ -140,7 +146,6 @@ class CustomClient {
 
             const contentSnippet = this.getContentSnippet(data);
             if (contentSnippet) {
-              process.stdout.write(contentSnippet);
               contentChunks.push(contentSnippet);
             }
           }
@@ -151,7 +156,7 @@ class CustomClient {
       throw new Error(`HTTP ${response.status}: ${errorText}`);
     }
 
-    return { role: Role.Assistant, content: contentChunks.join('') };
+    return contentChunks;
   }
 
   private getContentSnippet(data: string): string {
