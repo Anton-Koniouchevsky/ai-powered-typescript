@@ -1,3 +1,4 @@
+import { BaseTool } from "../dial-simple-agent/tools/base";
 import Message from "../models/Message";
 import Role from "../models/Role";
 
@@ -10,10 +11,12 @@ interface Choice {
         url: string;
       }>;
     };
+    tool_calls?: any;
   };
   delta: {
     content: string;
   };
+  finish_reason: string;
 }
 
 interface ClientData {
@@ -47,11 +50,15 @@ class CustomClient {
   private endpoint: string;
   private apiKey: string;
   private options: ClientOptions;
+  private tools: BaseTool[];
+  private toolSchemas: object[];
 
-  constructor(modelName: string, options: ClientOptions = {}) {
+  constructor(modelName: string, options: ClientOptions = {}, tools: BaseTool[] = []) {
     this.endpoint = `${process.env.DIAL_ENDPOINT}/openai/deployments/${modelName}/chat/completions`;
     this.apiKey = process.env.DIAL_API_KEY ?? "";
     this.options = options;
+    this.tools = tools;
+    this.toolSchemas = tools.map(tool => tool.schema);
   }
 
   async getCompletion(messages: Message[]): Promise<Message> {
@@ -62,6 +69,7 @@ class CustomClient {
 
     const requestData = {
       messages,
+      tools: this.toolSchemas,
       ...this.options,
     };
 
@@ -72,6 +80,7 @@ class CustomClient {
     });
 
     if (!response.ok) {
+      console.log(response);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
@@ -83,13 +92,62 @@ class CustomClient {
         return { role: Role.Assistant, content: combinedContent };
       }
 
-      const content = choices[0]!.message.content;
-      const custom_content = choices[0]!.message.custom_content;
+      const choice = choices[0]!;
+
+      if (choice.finish_reason === 'tool_calls') {
+        const toolMessages = await this.processToolCall(choice.message.tool_calls);
+
+        return this.getCompletion([
+          ...messages,
+          { 
+            role: Role.Assistant, 
+            content: choice.message.content || '',
+            tool_calls: choice.message.tool_calls
+          },
+          ...toolMessages,
+        ]);
+      }
+
+      const content = choice.message.content;
+      const custom_content = choice.message.custom_content;
 
       return { role: Role.Assistant, content, custom_content, metadata: { ...usage } };
     }
     
     throw new Error("No choices returned from API");
+  }
+
+  private async processToolCall(tool_calls: any): Promise<Message[]> {
+    const toolMessages = [];
+
+    for (const call of tool_calls) {
+      const toolCallId = call.id;
+      const toolFunction = call.function;
+      const toolName = toolFunction.name;
+      const toolArgs = JSON.parse(toolFunction.arguments);
+
+      const toolExecutionResult = await this.callTool(toolName, toolArgs);
+
+      toolMessages.push({
+        role: Role.Tool,
+        name: toolName,
+        tool_call_id: toolCallId,
+        content: toolExecutionResult,
+      });
+    }
+
+    return toolMessages
+  }
+
+  private async callTool(toolName: string, toolArgs: object): Promise<string> {
+    const tool = this.tools?.find(t => t.name === toolName);
+
+    if (tool) {
+      const result = await tool.execute(toolArgs);
+      return result;
+    }
+
+    return `Tool ${toolName} not found.`;
   }
 
   async streamCompletion(messages: Message[]): Promise<Message> {
@@ -140,7 +198,6 @@ class CustomClient {
             const data = lineStr.substring(6).trim();
             
             if (data === '[DONE]') {
-              console.log();
               break;
             }
 

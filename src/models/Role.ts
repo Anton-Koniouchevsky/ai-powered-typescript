@@ -1,7 +1,8 @@
 enum Role {
   User = 'user',
   Assistant = 'assistant',
-  System = 'system'
+  System = 'system',
+  Tool = 'tool',
 }
 
 export default Role;

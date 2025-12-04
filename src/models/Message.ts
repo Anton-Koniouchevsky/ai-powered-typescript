@@ -26,6 +26,7 @@ interface Message {
     completion_tokens?: number;
     total_tokens?: number;
   };
+  tool_calls?: any;
 }
 
 export default Message;

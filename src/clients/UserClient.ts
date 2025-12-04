@@ -64,6 +64,50 @@ class UserClient {
     return data;
   }
 
+  async addUser(user: Omit<User, 'id'>): Promise<User> {
+    const response = await fetch(`${process.env.USER_SERVICE_ENDPOINT}/v1/users`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(user),
+    });
+
+    if (!response.ok) {
+      console.log(response);
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json() as User;
+    return data;
+  }
+
+  async updateUser(userId: string, user: Partial<User>): Promise<User> {
+    const response = await fetch(`${process.env.USER_SERVICE_ENDPOINT}/v1/users/${userId}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify(user),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json() as User;
+    return data;
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    const response = await fetch(`${process.env.USER_SERVICE_ENDPOINT}/v1/users/${userId}`, {
+      method: 'DELETE',
+      headers,
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return;
+  }
+
   async health(): Promise<any> {
     const response = await fetch(`${process.env.USER_SERVICE_ENDPOINT}/health`, {
       method: 'GET',
