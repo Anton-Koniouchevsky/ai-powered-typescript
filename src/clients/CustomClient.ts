@@ -1,3 +1,4 @@
+import { MCPClient } from "../dial-mcp-fundamentals/agent/MCPClient";
 import { BaseTool } from "../dial-simple-agent/tools/base";
 import Message from "../models/Message";
 import Role from "../models/Role";
@@ -46,19 +47,32 @@ export interface ClientOptions {
   }
 }
 
+export interface MCPTool {
+  name: string;
+  description: string | undefined;
+  parameters: {
+    [x: string]: unknown;
+    type: "object";
+    properties?: Record<string, object> | undefined;
+    required?: string[] | undefined;
+  }
+}
+
 class CustomClient {
   private endpoint: string;
   private apiKey: string;
   private options: ClientOptions;
-  private tools: BaseTool[];
+  private tools: BaseTool[] | MCPTool[];
   private toolSchemas: object[];
+  private mcpClient?: MCPClient;
 
-  constructor(modelName: string, options: ClientOptions = {}, tools: BaseTool[] = []) {
+  constructor(modelName: string, options: ClientOptions = {}, tools: BaseTool[] | MCPTool[] = [], mcpClient?: MCPClient) {
     this.endpoint = `${process.env.DIAL_ENDPOINT}/openai/deployments/${modelName}/chat/completions`;
     this.apiKey = process.env.DIAL_API_KEY ?? "";
     this.options = options;
     this.tools = tools;
-    this.toolSchemas = tools.map(tool => tool.schema);
+    this.toolSchemas = tools.map(tool => (tool as BaseTool).schema || (tool as MCPTool).parameters);
+    this.mcpClient = mcpClient;
   }
 
   async getCompletion(messages: Message[]): Promise<Message> {
@@ -126,7 +140,13 @@ class CustomClient {
       const toolName = toolFunction.name;
       const toolArgs = JSON.parse(toolFunction.arguments);
 
-      const toolExecutionResult = await this.callTool(toolName, toolArgs);
+
+      let toolExecutionResult;
+      if (this.mcpClient) {
+        toolExecutionResult = await this.mcpClient.callTool(toolName, toolArgs);
+      } else {
+        toolExecutionResult = await this.callTool(toolName, toolArgs);
+      }
 
       toolMessages.push({
         role: Role.Tool,
@@ -143,7 +163,7 @@ class CustomClient {
     const tool = this.tools?.find(t => t.name === toolName);
 
     if (tool) {
-      const result = await tool.execute(toolArgs);
+      const result = await (tool as BaseTool).execute(toolArgs);
       return result;
     }
 

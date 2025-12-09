@@ -41,10 +41,12 @@
   "dependencies": {
     "@langchain/community": "^1.0.4",
     "@langchain/core": "^1.0.6",
+    "@modelcontextprotocol/sdk": "^1.24.3",
     "chromadb": "^3.1.6",
     "commander": "^14.0.2",
     "dotenv": "^16.4.5",
     "faiss-node": "^0.5.1",
+    "fastmcp": "^3.25.3",
     "inquirer": "^12.11.0",
     "langchain": "^1.0.6",
     "pg": "^8.16.3",
